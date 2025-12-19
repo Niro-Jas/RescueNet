@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'report_issue_screen.dart'; 
 import 'profile_screen.dart'; 
+import 'rewards_screen.dart';
+import 'notifications_screen.dart'; 
+import 'my_reports_screen.dart'; // 1. ADDED THIS IMPORT
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // Profile Data - Shared with ProfileScreen (Operations Kept Original)
+  // Profile Data - Shared with ProfileScreen
   String userName = "User";
   String userLocation = "Mumbai";
 
@@ -33,10 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      // Consistent Background Decorations
       body: Stack(
         children: [
-          // Background Decorative Circle
           Positioned(
             top: -50,
             right: -50,
@@ -76,9 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), activeIcon: Icon(Icons.grid_view_rounded), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.add_circle_rounded), label: 'Report'),
-            BottomNavigationBarItem(icon: Icon(Icons.notifications_rounded), label: 'Alerts'),
+            BottomNavigationBarItem(icon: Icon(Icons.stars_rounded), label: 'Rewards'),
             BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
           ],
         ),
@@ -89,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCurrentScreen() {
     switch (_selectedIndex) {
       case 0: return _buildHomeContent();
-      case 2: return const Center(child: Text("Notifications Screen Coming Soon"));
+      case 2: return const RewardsScreen(); 
       case 3:
         return ProfileScreen(
           currentName: userName,
@@ -115,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            // --- ENHANCED HEADER ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -144,18 +144,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 GestureDetector(
-                  onTap: () => setState(() => _selectedIndex = 3),
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF2962FF).withOpacity(0.2), width: 2),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Color(0xFFE3F2FD),
-                      child: Icon(Icons.person_rounded, color: Color(0xFF2962FF), size: 28),
-                    ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                    );
+                  },
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade200, width: 1),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)
+                          ],
+                        ),
+                        child: const Icon(Icons.notifications_none_rounded, color: Color(0xFF1A237E), size: 26),
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 10,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -163,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
             
             const SizedBox(height: 30),
             
-            // --- ENHANCED STAT CARDS ---
             Row(
               children: [
                 _buildStatCard("12", "Reported", Icons.edit_document, const Color(0xFF2962FF)),
@@ -178,17 +195,29 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text("Quick Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
             const SizedBox(height: 16),
             
-            // --- ENHANCED ACTION CARDS ---
             GestureDetector(
               onTap: _navigateToReport,
               child: _buildActionCard("Report an Issue", "Fast report civic problems", Icons.add_business_rounded, Colors.redAccent),
             ),
-            _buildActionCard("My Reports", "Track your submission status", Icons.analytics_rounded, const Color(0xFF2962FF)),
-            _buildActionCard("Civic Rewards", "Redeem your points for badges", Icons.workspace_premium_rounded, Colors.amber.shade700),
+
+            // 2. WRAPPED "MY REPORTS" IN GESTURE DETECTOR
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyReportsScreen()),
+                );
+              },
+              child: _buildActionCard("My Reports", "Track your submission status", Icons.analytics_rounded, const Color(0xFF2962FF)),
+            ),
+            
+            GestureDetector(
+              onTap: () => setState(() => _selectedIndex = 2),
+              child: _buildActionCard("Civic Rewards", "Redeem your points for badges", Icons.workspace_premium_rounded, Colors.amber.shade700),
+            ),
             
             const SizedBox(height: 30),
             
-            // --- ENHANCED RECENT ACTIVITY ---
             const Text("Recent Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
             const SizedBox(height: 16),
             Container(
@@ -219,9 +248,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+
+            const SizedBox(height: 35),
+            const Text("Nearby Issues Map", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
+            const SizedBox(height: 16),
+            _buildMapPreview(),
+
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMapPreview() {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 4))],
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Container(
+              color: Colors.blue.shade50,
+              width: double.infinity,
+              height: double.infinity,
+              child: Opacity(
+                opacity: 0.5,
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=1000&auto=format&fit=crop',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          const Position(child: Icon(Icons.location_on, color: Colors.red, size: 30), top: 40, left: 100),
+          const Position(child: Icon(Icons.location_on, color: Colors.orange, size: 25), top: 100, left: 220),
+          const Position(child: Icon(Icons.location_on, color: Colors.green, size: 28), top: 70, left: 180),
+          
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.map_rounded, size: 18),
+                label: const Text("Explore Full Map"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2962FF),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -272,5 +359,15 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade300, size: 16),
       ),
     );
+  }
+}
+
+class Position extends StatelessWidget {
+  final Widget child;
+  final double? top, left, right, bottom;
+  const Position({super.key, required this.child, this.top, this.left, this.right, this.bottom});
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(top: top, left: left, right: right, bottom: bottom, child: child);
   }
 }
